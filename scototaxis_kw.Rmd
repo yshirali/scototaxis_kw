@@ -1,0 +1,215 @@
+---
+title: "matechoice_kw"
+author: "Yasmin Shirali"
+date: "7/5/2019"
+output: html_document
+---
+
+This is a working script that I used to analyze the mate choice FRI data. I've done manual checks and this script gives me the correct numbers. When I use the code I adapted from Luke the numbers are a bit off (probably something I messed up, not him).
+
+```{r}
+library(readr)
+library(utils)
+library(tidyverse)
+```
+
+```{r}
+data_path <-"~/scototaxis_kw"
+
+file_list <- dir(data_path,
+                 full.names = FALSE,
+                 pattern = "*.csv",
+                 recursive = TRUE)
+head(file_list)
+```
+
+```{r}
+glue::glue("There are {length(file_list)} csv files in {data_path}.")
+```
+
+```{r}
+empty_column <- vector(length = length(file_list))
+```
+
+```{r}
+scoto_master <- data.frame(filename = empty_column)
+```
+
+```{r}
+extractPrePost <- function(filename) {
+  str_split(basename(filename), "_")[[1]][3]
+}
+
+extractScorer <- function(filename) {
+  str_split(basename(filename), "_")[[1]][11]
+}
+extractFishName <- function(filename) {
+  str_split(basename(filename), "_")[[1]][4]
+}
+
+```
+
+
+```{r}
+
+for(i in 1:length(file_list)) {
+  sheet <- read_csv(file_list[i], col_names = TRUE, col_types = NULL)
+  filename <- file_list[i]
+  scoto_master$filename[i] <- filename
+  startTime <- sheet$time[1]  
+  endTime <- sheet$time[nrow(sheet)]
+  length <- endTime - startTime
+  scoto_master$totalTime[i]<-length
+  sheet <- mutate(sheet, time.difference = -(time -lead(time)))
+  sheet$time.difference[nrow(sheet)]<-0
+  scoto_master$fish_name[i] <- extractFishName(filename)
+  scoto_master$PrePost[i] <- extractPrePost(filename)
+  scoto_master$scorer[i] <- extractScorer(filename)
+  #sheet_trialDur <- sheet %>%   # code chunk for real trial duration ("END" time, not tot_time)
+   # filter(code == "END")
+  #trial_dur <- sum(sheet_trialDur$time)
+  #mc_master$trial_dur[i] <- trial_dur
+  
+  sheet_w <- sheet %>% 
+    filter(code == "o")
+  tot_time_w <- sum(sheet_w$time.difference)
+  scoto_master$tot_time_w[i] <- tot_time_w
+  
+  sheet_b <- sheet %>% 
+    filter(code == "w")
+  tot_time_b <- sum(sheet_b$time.difference)
+  scoto_master$tot_time_b[i] <- tot_time_b
+  
+  sheet_wthigmo <- sheet %>% 
+    filter(code == "p")
+  tot_time_wthigmo <- sum(sheet_wthigmo$time.difference)
+  scoto_master$tot_time_wthigmo[i] <- tot_time_wthigmo
+  
+  sheet_bthigmo <- sheet %>% 
+    filter(code == "q")
+  tot_time_bthigmo <- sum(sheet_bthigmo$time.difference)
+  scoto_master$tot_time_bthigmo[i] <- tot_time_bthigmo
+  
+
+
+  scoto_master$prop_w[i] <- (scoto_master$tot_time_w[i]) / (scoto_master$totalTime[i])
+  scoto_master$prop_b[i] <- (scoto_master$tot_time_b[i]) / (scoto_master$totalTime[i])
+  scoto_master$prop_wthigmo[i] <- (scoto_master$tot_time_wthigmo[i]) / (scoto_master$totalTime[i])
+  scoto_master$prop_bthigmo[i] <- (scoto_master$tot_time_bthigmo[i]) / (scoto_master$totalTime[i])
+
+  
+
+  tot_transits <- nrow(sheet) - 1
+  scoto_master$tot_transits[i] <- tot_transits
+  
+  trans_w <- nrow(sheet_w) - 0
+  scoto_master$trans_w[i] <- trans_w
+  
+  trans_b <- nrow(sheet_b) - 0
+  scoto_master$trans_b[i] <- trans_b
+  
+  trans_wthigmo <- nrow(sheet_wthigmo) - 0
+  scoto_master$trans_wthigmo[i] <- trans_wthigmo
+  
+  trans_bthigmo <- nrow(sheet_bthigmo) - 0
+  scoto_master$trans_bthigmo[i] <- trans_bthigmo
+  
+  
+  latency_w <- sheet_w$time[1] - startTime
+  scoto_master$latency_w[i] <- latency_w
+
+  latency_b <- sheet_b$time[1] - startTime
+  scoto_master$latency_b[i] <- latency_b
+  
+  latency_wthigmo <- sheet_wthigmo$time[1] - startTime
+  scoto_master$latency_wthigmo[i] <- latency_wthigmo
+  
+  latency_bthigmo <- sheet_bthigmo$time[1] - startTime
+  scoto_master$latency_bthigmo[i] <- latency_bthigmo
+  
+}
+```
+
+```{r}
+write_csv(scoto_master, "scoto_master_kw_jul6..csv")
+```
+
+
+```{r}
+scoto_master_medians <- scoto_master %>%
+  group_by(PrePost, fish_name) %>%
+  summarise_at(c("tot_time_w",	"tot_time_b",	"tot_time_wthigmo",	"tot_time_bthigmo",	"tot_transits",	"trans_w",	"trans_b",	"trans_wthigmo",	"trans_bthigmo","latency_w",	"latency_b",	"latency_wthigmo",	"latency_bthigmo", "prop_w", "prop_b", "prop_wthigmo", "prop_bthigmo"),
+               median)
+```
+
+```{r}
+write_csv(scoto_master_medians, "scoto_medians_jul6.csv")
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
